@@ -1,0 +1,43 @@
+# Install Java 21 (Amazon Corretto)
+sudo yum install -y java-21-amazon-corretto
+
+# Configure Linux kernel settings required by SonarQube / Elasticsearch
+sudo tee /etc/sysctl.d/99-sonarqube.conf >/dev/null <<'EOF'
+vm.max_map_count=524288
+fs.file-max=131072
+EOF
+
+sudo sysctl --system
+sysctl vm.max_map_count
+sysctl fs.file-max
+
+# Install and start Docker
+sudo dnf install -y docker
+sudo systemctl enable --now docker
+sudo docker --version
+
+# Create persistent Docker volumes
+sudo docker volume create sonarqube_data
+sudo docker volume create sonarqube_extensions
+sudo docker volume create sonarqube_logs
+
+# Start SonarQube Community Build
+sudo docker run -d \
+  --name sonarqube \
+  --restart unless-stopped \
+  --ulimit nofile=131072:131072 \
+  --ulimit nproc=8192:8192 \
+  -p 9000:9000 \
+  -v sonarqube_data:/opt/sonarqube/data \
+  -v sonarqube_extensions:/opt/sonarqube/extensions \
+  -v sonarqube_logs:/opt/sonarqube/logs \
+  sonarqube:community
+
+# Verify the container is running
+sudo docker ps
+
+echo
+echo "SonarQube container launched."
+echo "Wait for startup, then browse to: http://<EC2-Public-IP>:9000"
+echo "Initial login (typically): admin / admin"
+echo "If startup fails, check logs with: sudo docker logs -f sonarqube"
