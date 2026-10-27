@@ -1,5 +1,5 @@
 # Install Java 21 (Amazon Corretto)
-sudo yum install -y java-21-amazon-corretto
+sudo yum install java-21-amazon-corretto -y
 
 # Configure Linux kernel settings required by SonarQube / Elasticsearch
 sudo tee /etc/sysctl.d/99-sonarqube.conf >/dev/null <<'EOF'
