@@ -1,0 +1,47 @@
+pipeline {
+    agent any 
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage ("code") {
+            steps {
+                git 'https://github.com/Naveen6399/one.git'
+            }
+        }
+        stage ("cqa") {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh ''' 
+                    mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                    -Dsonar.projectKey=myproject \
+                    -Dsonar.projectName='myproject' \
+                    -Dsonar.host.url=http://16.178.72.248:8080 \
+                    -Dsonar.token=sqp_7cb628f1f74fb2d7cbab01f9eb68b65b495c84e4
+                    '''
+                }
+            }
+        }
+        stage ("build") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage ("deploy") {
+            input{
+                message "can i deploy?"
+            }
+            steps {
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tomcatid', path: '', url: 'http://54.252.173.195:8080/')], contextPath: 'sales', war: 'target/*.war'
+            }
+        }
+    }
+    post {
+        always {
+                    mail to: 'naveenrobin123@gmail.com',
+                    subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} \n build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
+
+        }
+    }
+}
