@@ -1,5 +1,5 @@
 pipeline {
-    agent any 
+    agent any
     tools {
         maven 'mymaven'
     }
@@ -12,12 +12,12 @@ pipeline {
         stage ("cqa") {
             steps {
                 withSonarQubeEnv('mysonar') {
-                    sh ''' 
+                    sh '''
                     mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
                     -Dsonar.projectKey=myproject \
                     -Dsonar.projectName='myproject' \
-                    -Dsonar.host.url=http://16.178.72.248:8080 \
-                    -Dsonar.token=sqp_7cb628f1f74fb2d7cbab01f9eb68b65b495c84e4
+                    -Dsonar.host.url=http://13.236.116.254:8080 \
+                    -Dsonar.token=sqp_4fe8c0536de8a4b242fe96c41d3e481831f916a5
                     '''
                 }
             }
@@ -27,21 +27,26 @@ pipeline {
                 sh 'mvn clean package'
             }
         }
-        stage ("deploy") {
-            input{
-                message "can i deploy?"
-            }
+        stage ("artifact") {
             steps {
-                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tomcatid', path: '', url: 'http://54.252.173.195:8080/')], contextPath: 'sales', war: 'target/*.war'
+                nexusArtifactUploader artifacts: [[artifactId: 'myweb', classifier: '', file: 'target/myweb.war', type: 'war']], credentialsId: 'nexusid', groupId: 'in.javahome', nexusUrl: '3.106.134.101:8080', nexusVersion: 'nexus3', protocol: 'http', repository: 'newrepo', version: '8.8.7'
+            }
+        }
+        stage ("deploy") {
+            // input {
+            //     message "can i deploy?"
+            // }
+            steps {
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tomcatid', path: '', url: 'http://54.253.202.233:8080/')], contextPath: 'sales', war: 'target/*.war'
             }
         }
     }
     post {
         always {
-                    mail to: 'naveenrobin123@gmail.com',
-                    subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} \n build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
-
+            sh 'printenv'
+            //  mail to: 'naveenrobin007@gmail.com',
+            //  subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            //  body: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} \n build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
         }
     }
 }
